@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { calculateOvertime, effectiveDailyThreshold } from "@/lib/overtime/calculate";
 import { getStateRules, listStates } from "@/lib/overtime/registry";
 import type { StateCode } from "@/lib/overtime/types";
+import StateSelect from "@/components/StateSelect";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -91,19 +92,7 @@ export default function Calculator() {
           <label htmlFor="state" className="block text-sm font-medium">
             State
           </label>
-          <select
-            id="state"
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            className="mt-1 w-full rounded-md border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-700"
-          >
-            {states.map((s) => (
-              <option key={s.code} value={s.code} disabled={!s.available}>
-                {s.name}
-                {!s.available ? " (coming soon)" : ""}
-              </option>
-            ))}
-          </select>
+          <StateSelect id="state" states={states} value={state} onChange={setState} />
         </div>
 
         {!rules && (
