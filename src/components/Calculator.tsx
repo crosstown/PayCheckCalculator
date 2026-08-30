@@ -28,7 +28,8 @@ export default function Calculator() {
 
   const rules = getStateRules(state);
   const activeWeeks = payPeriod === "weekly" ? 1 : 2;
-  const hasDailyRule = rules?.dailyOvertimeThresholdHours !== undefined;
+  const hasDayLevelInput =
+    rules?.dailyOvertimeThresholdHours !== undefined || !!rules?.seventhConsecutiveDay;
 
   const rate = parseFloat(hourlyRate);
   const rateValid = !Number.isNaN(rate) && rate >= 0;
@@ -45,7 +46,7 @@ export default function Calculator() {
     }
 
     const weeks = Array.from({ length: activeWeeks }).map((_, i) => {
-      if (hasDailyRule) {
+      if (hasDayLevelInput) {
         const days = DAY_LABELS.map((label, d) => {
           const raw = weekDays[i]?.[d] ?? "0";
           const hours = parseFloat(raw);
@@ -73,7 +74,7 @@ export default function Calculator() {
         error: e instanceof Error ? e.message : "Something went wrong.",
       };
     }
-  }, [state, rate, rateValid, weekTotals, weekDays, activeWeeks, hasDailyRule, altSchedule, rules]);
+  }, [state, rate, rateValid, weekTotals, weekDays, activeWeeks, hasDayLevelInput, altSchedule, rules]);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10">
@@ -81,8 +82,7 @@ export default function Calculator() {
         Paycheck Overtime Calculator
       </h1>
       <p className="mt-2 text-sm text-neutral-500">
-        Estimate overtime pay by state. Connecticut, California, Nevada,
-        Colorado, and Alaska so far — more states coming soon.
+        Estimate overtime pay for all 50 states + DC.
       </p>
 
       <div className="mt-8 space-y-6 rounded-xl border border-neutral-200 p-6 dark:border-neutral-800">
@@ -183,7 +183,7 @@ export default function Calculator() {
             {/* Hours input: per-day grid for daily-rule states, single total otherwise */}
             <div className="space-y-4">
               {Array.from({ length: activeWeeks }).map((_, i) =>
-                hasDailyRule ? (
+                hasDayLevelInput ? (
                   <div key={i}>
                     <span className="block text-sm font-medium">
                       Hours worked{activeWeeks > 1 ? ` — Week ${i + 1}` : ""}

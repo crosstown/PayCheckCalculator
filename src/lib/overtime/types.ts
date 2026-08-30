@@ -40,16 +40,25 @@ export interface WageConditionalDailyOvertime {
 }
 
 /**
- * California-style premium for the 7th consecutive day worked in a
- * single workweek: the first `firstBlockHours` of that day are paid
- * at `firstBlockMultiplier` (i.e. there are no straight-time hours at
- * all that day), and anything beyond that is paid at `beyondMultiplier`.
- * Only applies when all 7 days of the entered workweek have hours > 0.
+ * Premium for the 7th consecutive day worked in a single workweek: the
+ * first `firstBlockHours` of that day are paid at `firstBlockMultiplier`
+ * (i.e. there are no straight-time hours at all that day), and anything
+ * beyond that is paid at `beyondMultiplier`. Only applies when all 7
+ * days of the entered workweek have hours > 0.
+ *
+ * California: firstBlockHours=8, beyond=2x, applies regardless of
+ * weekly total. Kentucky (KRS § 337.050): all hours on the 7th day at
+ * 1.5x (model as firstBlockHours=Infinity so the "beyond" tier is
+ * never reached), but ONLY if the statute's `requiresWeeklyOvertimeTriggered`
+ * condition is met -- Kentucky's rule explicitly does not apply if the
+ * employee worked 40 hours or fewer that week.
  */
 export interface SeventhConsecutiveDayRule {
   firstBlockHours: number;
   firstBlockMultiplier: number;
   beyondMultiplier: number;
+  /** Kentucky-style gate: rule only applies if weekly total > weeklyOvertimeThresholdHours. */
+  requiresWeeklyOvertimeTriggered?: boolean;
 }
 
 export interface StateOvertimeRules {
@@ -79,7 +88,7 @@ export interface StateOvertimeRules {
   /** Nevada/Alaska: a written agreement can remove or adjust the daily rule. */
   alternativeSchedule?: AlternativeScheduleRule;
 
-  /** California only. */
+  /** California and Kentucky. */
   seventhConsecutiveDay?: SeventhConsecutiveDayRule;
 }
 
