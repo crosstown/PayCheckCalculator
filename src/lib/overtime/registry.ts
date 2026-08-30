@@ -1,5 +1,9 @@
 import type { StateCode, StateOvertimeRules } from "./types";
 import { ctOvertimeRules } from "./states/ct";
+import { caOvertimeRules } from "./states/ca";
+import { nvOvertimeRules } from "./states/nv";
+import { coOvertimeRules } from "./states/co";
+import { akOvertimeRules } from "./states/ak";
 
 /**
  * All 50 states + DC, so the state picker can show the full list from
@@ -26,6 +30,10 @@ const STATE_NAMES: Record<StateCode, string> = {
 /** States with a fully implemented rules module. */
 const IMPLEMENTED_RULES: Partial<Record<StateCode, StateOvertimeRules>> = {
   CT: ctOvertimeRules,
+  CA: caOvertimeRules,
+  NV: nvOvertimeRules,
+  CO: coOvertimeRules,
+  AK: akOvertimeRules,
 };
 
 export interface StateOption {

@@ -10,64 +10,105 @@ import { getStateRules } from "./registry";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-function calculateWeek(rules: StateOvertimeRules, week: WeekInput): WeekResult {
-  const hasDailyRule = rules.dailyOvertimeThresholdHours !== undefined;
+/** Resolves the effective daily-overtime threshold for this calculation,
+ * or `undefined` if the daily rule doesn't apply at all -- accounting
+ * for Nevada's wage condition and Nevada/Alaska's alternative-schedule
+ * agreements. */
+export function effectiveDailyThreshold(
+  rules: StateOvertimeRules,
+  hourlyRate: number,
+  alternativeScheduleAgreement: boolean | undefined,
+): number | undefined {
+  if (rules.dailyOvertimeThresholdHours === undefined) return undefined;
 
-  if (hasDailyRule && week.days && week.days.length > 0) {
-    return calculateWeekWithDailyRule(rules, week.days);
+  if (
+    rules.wageConditionalDailyOvertime &&
+    hourlyRate >= rules.wageConditionalDailyOvertime.belowHourlyRate
+  ) {
+    return undefined; // e.g. Nevada: at/above the wage threshold, daily rule doesn't apply
   }
 
-  // Weekly-only path (this is CT's actual path today, and is the
-  // well-understood, verified FLSA-style calculation).
+  if (alternativeScheduleAgreement && rules.alternativeSchedule) {
+    if (rules.alternativeSchedule.removesDailyOvertime) return undefined;
+    if (rules.alternativeSchedule.adjustedDailyThresholdHours !== undefined) {
+      return rules.alternativeSchedule.adjustedDailyThresholdHours;
+    }
+  }
+
+  return rules.dailyOvertimeThresholdHours;
+}
+
+function calculateWeek(
+  rules: StateOvertimeRules,
+  week: WeekInput,
+  hourlyRate: number,
+  alternativeScheduleAgreement: boolean | undefined,
+): WeekResult {
+  const dailyThreshold = effectiveDailyThreshold(rules, hourlyRate, alternativeScheduleAgreement);
+
+  if (dailyThreshold !== undefined && week.days && week.days.length > 0) {
+    return calculateWeekWithDailyRule(rules, week.days, dailyThreshold);
+  }
+
+  // Weekly-only path: either the state has no daily rule (CT and most
+  // states), or a wage/agreement condition removed it for this input.
   const threshold = rules.weeklyOvertimeThresholdHours;
   const regularHours = Math.min(week.totalHours, threshold);
   const overtimeHours = Math.max(0, week.totalHours - threshold);
 
-  return finalizeWeek(rules, regularHours, overtimeHours, 0);
+  return finalizeWeek(regularHours, overtimeHours, 0);
 }
 
-/**
- * NOTE: this path is a best-effort scaffold for future states with a
- * daily-overtime rule (e.g. California) and is NOT yet enabled by any
- * state in the registry -- CT never reaches this function. Before
- * wiring up a state that sets `dailyOvertimeThresholdHours`, verify
- * this reconciliation logic (daily-vs-weekly overtime, no
- * double-counting hours) against that state's actual DOL guidance.
- * Do not trust this for real payroll decisions as-is.
- */
 function calculateWeekWithDailyRule(
   rules: StateOvertimeRules,
   days: DayHours[],
+  dailyThreshold: number,
 ): WeekResult {
+  const dtThreshold = rules.dailyDoubleTimeThresholdHours ?? Infinity;
+
+  // The 7th-consecutive-day premium (CA) only applies when the whole
+  // 7-day workweek was worked, and replaces the *entire* classification
+  // for that final day -- it is not layered on top of the normal daily
+  // rule for that day.
+  const seventhDayApplies =
+    !!rules.seventhConsecutiveDay && days.length === 7 && days.every((d) => d.hours > 0);
+  const seventhDayIndex = seventhDayApplies ? days.length - 1 : -1;
+
   let dailyRegular = 0;
   let dailyOvertime = 0;
   let dailyDoubleTime = 0;
 
-  const otThreshold = rules.dailyOvertimeThresholdHours ?? Infinity;
-  const dtThreshold = rules.dailyDoubleTimeThresholdHours ?? Infinity;
-
-  for (const day of days) {
-    const regular = Math.min(day.hours, otThreshold);
-    const overtime = Math.max(0, Math.min(day.hours, dtThreshold) - otThreshold);
+  days.forEach((day, i) => {
+    if (i === seventhDayIndex && rules.seventhConsecutiveDay) {
+      const { firstBlockHours } = rules.seventhConsecutiveDay;
+      // No straight-time hours at all on the 7th consecutive day.
+      dailyOvertime += Math.min(day.hours, firstBlockHours);
+      dailyDoubleTime += Math.max(0, day.hours - firstBlockHours);
+      return;
+    }
+    const regular = Math.min(day.hours, dailyThreshold);
+    const overtime = Math.max(0, Math.min(day.hours, dtThreshold) - dailyThreshold);
     const doubleTime = Math.max(0, day.hours - dtThreshold);
     dailyRegular += regular;
     dailyOvertime += overtime;
     dailyDoubleTime += doubleTime;
-  }
+  });
 
   // Weekly threshold applies on top of hours not already elevated by
-  // the daily rule -- excess "regular" hours beyond the weekly
-  // threshold get upgraded to (weekly) overtime.
+  // the daily/7th-day rules -- excess "regular" hours beyond the
+  // weekly threshold get upgraded to (weekly) overtime. This is how
+  // "whichever is greater, no double-counting" is enforced across
+  // CA/AK/CO/NV: each hour is counted exactly once, at the highest
+  // applicable multiplier.
   const weeklyThreshold = rules.weeklyOvertimeThresholdHours;
   const weeklyUpgrade = Math.max(0, dailyRegular - weeklyThreshold);
   const regularHours = dailyRegular - weeklyUpgrade;
   const overtimeHours = dailyOvertime + weeklyUpgrade;
 
-  return finalizeWeek(rules, regularHours, overtimeHours, dailyDoubleTime);
+  return finalizeWeek(regularHours, overtimeHours, dailyDoubleTime);
 }
 
 function finalizeWeek(
-  rules: StateOvertimeRules,
   regularHours: number,
   overtimeHours: number,
   doubleTimeHours: number,
@@ -96,7 +137,7 @@ export function calculateOvertime(input: CalculationInput): CalculationResult {
   const doubleTimeMultiplier = rules.dailyDoubleTimeMultiplier ?? 2;
 
   const weeks = input.weeks.map((week) => {
-    const w = calculateWeek(rules, week);
+    const w = calculateWeek(rules, week, input.hourlyRate, input.alternativeScheduleAgreement);
     const regularPay = round2(w.regularHours * input.hourlyRate);
     const overtimePay = round2(w.overtimeHours * input.hourlyRate * overtimeMultiplier);
     const doubleTimePay = round2(w.doubleTimeHours * input.hourlyRate * doubleTimeMultiplier);
