@@ -5,6 +5,7 @@ import { calculateOvertime, effectiveDailyThreshold } from "@/lib/overtime/calcu
 import { getStateRules, listStates } from "@/lib/overtime/registry";
 import type { StateCode } from "@/lib/overtime/types";
 import StateSelect from "@/components/StateSelect";
+import PaycheckDeductions from "@/components/PaycheckDeductions";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -25,6 +26,15 @@ const PAY_PERIOD_LABELS: Record<PayPeriod, string> = {
   weekly: "Weekly",
   biweekly: "Biweekly",
   semimonthly: "Semi-monthly",
+};
+// Standard annualization factors (IRS Pub 15-T), independent of how
+// many workweeks were entered for a semi-monthly period -- a
+// semi-monthly period is 24 pay periods/year by definition regardless
+// of that workweek-count approximation.
+const PAY_PERIODS_PER_YEAR: Record<PayPeriod, number> = {
+  weekly: 52,
+  biweekly: 26,
+  semimonthly: 24,
 };
 
 export default function Calculator() {
@@ -309,6 +319,11 @@ export default function Calculator() {
                   <span>Total pay</span>
                   <span>{currency.format(result.totals.totalPay)}</span>
                 </div>
+
+                <PaycheckDeductions
+                  grossPay={result.totals.totalPay}
+                  payPeriodsPerYear={PAY_PERIODS_PER_YEAR[payPeriod]}
+                />
               </div>
             )}
 
