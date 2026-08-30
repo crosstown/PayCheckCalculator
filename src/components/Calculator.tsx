@@ -12,23 +12,38 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const DEFAULT_WEEK_TOTALS = ["45", "40"];
+const DEFAULT_WEEK_TOTALS = ["45", "40", "20"];
 const DEFAULT_WEEK_DAYS = [
   ["0", "9", "9", "9", "9", "9", "0"],
   ["0", "8", "8", "8", "8", "8", "0"],
+  ["0", "8", "8", "4", "0", "0", "0"],
 ];
+const PAY_PERIODS = ["weekly", "biweekly", "semimonthly"] as const;
+type PayPeriod = (typeof PAY_PERIODS)[number];
+const FIXED_WEEKS: Partial<Record<PayPeriod, number>> = { weekly: 1, biweekly: 2 };
+const PAY_PERIOD_LABELS: Record<PayPeriod, string> = {
+  weekly: "Weekly",
+  biweekly: "Biweekly",
+  semimonthly: "Semi-monthly",
+};
 
 export default function Calculator() {
   const states = useMemo(() => listStates(), []);
   const [state, setState] = useState<StateCode>("CT");
   const [hourlyRate, setHourlyRate] = useState("20.00");
-  const [payPeriod, setPayPeriod] = useState<"weekly" | "biweekly">("weekly");
+  const [payPeriod, setPayPeriod] = useState<PayPeriod>("weekly");
+  // Only semi-monthly varies -- a half-month doesn't divide evenly into
+  // 7-day workweeks (unlike weekly/biweekly, which are exactly 1 or 2
+  // by definition), so how many workweeks fall in a given semi-monthly
+  // period depends on the employer's workweek start day and the
+  // calendar. 2 is the common case; 3 covers a partial extra week.
+  const [semiMonthlyWeeks, setSemiMonthlyWeeks] = useState<2 | 3>(2);
   const [weekTotals, setWeekTotals] = useState(DEFAULT_WEEK_TOTALS);
   const [weekDays, setWeekDays] = useState(DEFAULT_WEEK_DAYS);
   const [altSchedule, setAltSchedule] = useState(false);
 
   const rules = getStateRules(state);
-  const activeWeeks = payPeriod === "weekly" ? 1 : 2;
+  const activeWeeks = FIXED_WEEKS[payPeriod] ?? semiMonthlyWeeks;
   const hasDayLevelInput =
     rules?.dailyOvertimeThresholdHours !== undefined || !!rules?.seventhConsecutiveDay;
 
@@ -146,26 +161,47 @@ export default function Calculator() {
             <div>
               <span className="block text-sm font-medium">Pay period</span>
               <div className="mt-1 flex gap-2">
-                {(["weekly", "biweekly"] as const).map((p) => (
+                {PAY_PERIODS.map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => setPayPeriod(p)}
-                    className={`rounded-md border px-3 py-1.5 text-sm capitalize ${
+                    className={`rounded-md border px-3 py-1.5 text-sm ${
                       payPeriod === p
                         ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
                         : "border-neutral-300 dark:border-neutral-700"
                     }`}
                   >
-                    {p}
+                    {PAY_PERIOD_LABELS[p]}
                   </button>
                 ))}
               </div>
-              {payPeriod === "biweekly" && (
+              {payPeriod !== "weekly" && (
                 <p className="mt-1 text-xs text-neutral-500">
                   Overtime is calculated per 7-day workweek, so each week is
                   entered — and evaluated — separately.
+                  {payPeriod === "semimonthly" &&
+                    " A semi-monthly period (paid twice a month, e.g. the 1st & 15th) doesn't divide evenly into workweeks the way biweekly does -- it's usually 2 full workweeks, but depending on your employer's workweek start day it can include a partial 3rd. Check your pay stub or ask your employer which applies, and add the 3rd week below if needed."}
                 </p>
+              )}
+              {payPeriod === "semimonthly" && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-neutral-500">Workweeks in this period:</span>
+                  {([2, 3] as const).map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setSemiMonthlyWeeks(n)}
+                      className={`rounded-md border px-2 py-1 text-xs ${
+                        semiMonthlyWeeks === n
+                          ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
+                          : "border-neutral-300 dark:border-neutral-700"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
