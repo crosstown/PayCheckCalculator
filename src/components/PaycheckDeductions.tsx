@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { calculatePaycheck } from "@/lib/paycheck/calculate";
 import { SOCIAL_SECURITY_WAGE_BASE_2026 } from "@/lib/paycheck/fica";
 import { getStateTaxRules } from "@/lib/paycheck/stateTax/calculate";
-import type { FilingStatus } from "@/lib/paycheck/types";
+import type { DeductionTaxTreatment, FilingStatus } from "@/lib/paycheck/types";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -19,6 +19,22 @@ const FILING_STATUS_LABELS: Record<FilingStatus, string> = {
   marriedJointly: "Married filing jointly",
   headOfHousehold: "Head of household",
 };
+
+const DEDUCTION_TREATMENT_LABELS: Record<DeductionTaxTreatment, string> = {
+  preTax: "Pre-tax",
+  postTax: "Post-tax",
+};
+
+interface DeductionRow {
+  id: string;
+  label: string;
+  amount: string;
+  taxTreatment: DeductionTaxTreatment;
+}
+
+let nextRowId = 0;
+/** crypto.randomUUID() needs a secure context; this always works, including in older/non-HTTPS dev setups. */
+const newRowId = () => `deduction-${++nextRowId}`;
 
 interface PaycheckDeductionsProps {
   grossPay: number;
@@ -37,8 +53,24 @@ export default function PaycheckDeductions({
   const [qualifyingChildren, setQualifyingChildren] = useState("0");
   const [otherDependents, setOtherDependents] = useState("0");
   const [contribution401kPercent, setContribution401kPercent] = useState("0");
+  const [deductionRows, setDeductionRows] = useState<DeductionRow[]>([]);
 
   const stateRules = getStateTaxRules(state);
+
+  const addDeductionRow = () => {
+    setDeductionRows((rows) => [
+      ...rows,
+      { id: newRowId(), label: "", amount: "", taxTreatment: "preTax" },
+    ]);
+  };
+
+  const updateDeductionRow = (id: string, patch: Partial<DeductionRow>) => {
+    setDeductionRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  };
+
+  const removeDeductionRow = (id: string) => {
+    setDeductionRows((rows) => rows.filter((r) => r.id !== id));
+  };
 
   const result = useMemo(() => {
     const qc = parseInt(qualifyingChildren, 10);
@@ -52,6 +84,15 @@ export default function PaycheckDeductions({
       otherDependents: Number.isNaN(od) || od < 0 ? 0 : od,
       contribution401kPercent: Number.isNaN(pct) || pct < 0 ? 0 : pct,
       state,
+      otherDeductions: deductionRows.map((r) => {
+        const amt = parseFloat(r.amount);
+        return {
+          id: r.id,
+          label: r.label.trim() || "Other deduction",
+          amount: Number.isNaN(amt) || amt < 0 ? 0 : amt,
+          taxTreatment: r.taxTreatment,
+        };
+      }),
     });
   }, [
     grossPay,
@@ -61,6 +102,7 @@ export default function PaycheckDeductions({
     otherDependents,
     contribution401kPercent,
     state,
+    deductionRows,
   ]);
 
   return (
@@ -152,6 +194,79 @@ export default function PaycheckDeductions({
             </div>
           </div>
 
+          <div>
+            <p className="text-sm font-medium">Other deductions</p>
+            <p className="text-xs font-normal text-neutral-500">
+              Health/dental/vision insurance, HSA, FSA (pre-tax), or Roth
+              contributions, wage garnishments, union dues, etc. (post-tax) --
+              per pay period.
+            </p>
+
+            {deductionRows.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {deductionRows.map((row) => (
+                  <div key={row.id} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      aria-label="Deduction label"
+                      placeholder="e.g. Medical insurance"
+                      value={row.label}
+                      onChange={(e) => updateDeductionRow(row.id, { label: e.target.value })}
+                      className="min-w-0 flex-1 rounded-md border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-neutral-700"
+                    />
+                    <div className="flex w-24 items-center rounded-md border border-neutral-300 px-2 dark:border-neutral-700">
+                      <span className="text-neutral-400">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        aria-label="Deduction amount"
+                        placeholder="0.00"
+                        value={row.amount}
+                        onChange={(e) => updateDeductionRow(row.id, { amount: e.target.value })}
+                        className="w-full bg-transparent py-2 pl-1 text-sm outline-none"
+                      />
+                    </div>
+                    <select
+                      aria-label="Tax treatment"
+                      value={row.taxTreatment}
+                      onChange={(e) =>
+                        updateDeductionRow(row.id, {
+                          taxTreatment: e.target.value as DeductionTaxTreatment,
+                        })
+                      }
+                      className="rounded-md border border-neutral-300 bg-transparent px-2 py-2 text-sm dark:border-neutral-700"
+                    >
+                      {(Object.entries(DEDUCTION_TREATMENT_LABELS) as [DeductionTaxTreatment, string][]).map(
+                        ([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => removeDeductionRow(row.id)}
+                      aria-label="Remove deduction"
+                      className="shrink-0 rounded-md px-2 py-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={addDeductionRow}
+              className="mt-2 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+            >
+              + Add deduction
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 border-t border-neutral-200 pt-3 text-sm text-neutral-600 dark:border-neutral-800 dark:text-neutral-400">
             <span>Gross pay</span>
             <span className="text-right">{currency.format(result.grossPay)}</span>
@@ -161,6 +276,15 @@ export default function PaycheckDeductions({
                 <span className="text-right">{deduction(result.contribution401k)}</span>
               </>
             )}
+            {result.otherDeductions.map((d) => (
+              <Fragment key={d.id}>
+                <span>
+                  {d.label}
+                  <span className="text-neutral-400"> ({DEDUCTION_TREATMENT_LABELS[d.taxTreatment]})</span>
+                </span>
+                <span className="text-right">{deduction(d.amount)}</span>
+              </Fragment>
+            ))}
             <span>Social Security (6.2%)</span>
             <span className="text-right">{deduction(result.socialSecurityTax)}</span>
             <span>Medicare (1.45%)</span>
@@ -213,9 +337,25 @@ export default function PaycheckDeductions({
               </li>
             )}
             <li>
-              Doesn&apos;t include other paycheck deductions (health
-              insurance, HSA/FSA, wage garnishments, etc.).
+              Pre-tax deductions (health/dental/vision insurance, HSA, FSA)
+              reduce federal, state, and FICA (Social Security/Medicare)
+              taxable wages -- the standard treatment under IRS Section 125.
+              Post-tax deductions (Roth contributions, wage garnishments,
+              union dues, etc.) reduce net pay only, with no effect on any
+              tax withholding.
             </li>
+            {result.otherPreTaxTotal > 0 && (
+              <li>
+                A few states don&apos;t fully conform to the federal Section
+                125 pre-tax treatment above -- notably California, which
+                taxes HSA contributions as regular income at the state
+                level even though they&apos;re pre-tax federally, and New
+                Jersey, which generally taxes cafeteria-plan benefits for
+                state purposes. This estimate applies the federal treatment
+                to state wages uniformly, so it may not exactly match your
+                paystub in those states.
+              </li>
+            )}
             <li>
               Social Security tax doesn&apos;t account for the annual wage
               base cap (${SOCIAL_SECURITY_WAGE_BASE_2026.toLocaleString()} for

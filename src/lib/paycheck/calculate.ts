@@ -1,4 +1,4 @@
-import type { PaycheckInput, PaycheckResult } from "./types";
+import type { OtherDeductionResult, PaycheckInput, PaycheckResult } from "./types";
 import { federalIncomeTaxWithholding } from "./federalWithholding2026";
 import { calculateFica } from "./fica";
 import { calculateStateTax } from "./stateTax/calculate";
@@ -10,11 +10,37 @@ export function calculatePaycheck(input: PaycheckInput): PaycheckResult {
   const contribution401k = round2(
     grossPay * Math.max(0, Math.min(100, input.contribution401kPercent)) / 100,
   );
-  const federalTaxableWages = round2(grossPay - contribution401k);
 
-  // FICA is computed on gross pay, NOT federalTaxableWages -- 401(k)
-  // contributions don't reduce FICA wages (see fica.ts).
-  const { socialSecurityTax, medicareTax } = calculateFica(grossPay);
+  // Round each "other deduction" line item BEFORE summing, same
+  // reasoning as the tax line items below -- these are the exact
+  // numbers shown on screen. Zero/blank rows are dropped rather than
+  // shown as a $0.00 line.
+  const otherDeductions: OtherDeductionResult[] = input.otherDeductions
+    .map((d) => ({ ...d, amount: round2(Math.max(0, d.amount)) }))
+    .filter((d) => d.amount > 0);
+
+  const otherPreTaxTotal = round2(
+    otherDeductions
+      .filter((d) => d.taxTreatment === "preTax")
+      .reduce((sum, d) => sum + d.amount, 0),
+  );
+  const otherPostTaxTotal = round2(
+    otherDeductions
+      .filter((d) => d.taxTreatment === "postTax")
+      .reduce((sum, d) => sum + d.amount, 0),
+  );
+
+  // Section 125 pre-tax deductions (health/dental/vision insurance,
+  // HSA, FSA) come out before FICA is computed -- unlike 401(k), which
+  // reduces federal/state taxable wages but stays fully FICA-subject
+  // (see fica.ts).
+  const ficaWages = Math.max(0, round2(grossPay - otherPreTaxTotal));
+  const federalTaxableWages = Math.max(
+    0,
+    round2(grossPay - contribution401k - otherPreTaxTotal),
+  );
+
+  const { socialSecurityTax, medicareTax } = calculateFica(ficaWages);
 
   const federalIncomeTax = federalIncomeTaxWithholding(
     federalTaxableWages,
@@ -24,9 +50,12 @@ export function calculatePaycheck(input: PaycheckInput): PaycheckResult {
     Math.max(0, Math.floor(input.otherDependents)),
   );
 
-  // State tax uses the same post-401(k) taxable wages as federal
-  // (both are pre-tax reductions for state purposes too, in every
-  // state modeled here).
+  // State tax uses the same post-401(k)/post-pre-tax-deduction taxable
+  // wages as federal (both are pre-tax reductions for state purposes
+  // too, in every state modeled here) -- see the state-tax notes
+  // rendered alongside this for the handful of states (notably CA for
+  // HSA, NJ for cafeteria-plan benefits generally) that don't actually
+  // conform to this federal treatment.
   const stateIncomeTax = calculateStateTax(
     input.state,
     federalTaxableWages,
@@ -49,6 +78,8 @@ export function calculatePaycheck(input: PaycheckInput): PaycheckResult {
 
   const totalDeductions = round2(
     contribution401k +
+      otherPreTaxTotal +
+      otherPostTaxTotal +
       socialSecurityTaxRounded +
       medicareTaxRounded +
       federalIncomeTaxRounded +
@@ -64,6 +95,9 @@ export function calculatePaycheck(input: PaycheckInput): PaycheckResult {
     medicareTax: medicareTaxRounded,
     federalIncomeTax: federalIncomeTaxRounded,
     stateIncomeTax: stateIncomeTaxRounded,
+    otherDeductions,
+    otherPreTaxTotal,
+    otherPostTaxTotal,
     totalDeductions,
     netPay,
   };

@@ -1,5 +1,32 @@
 export type FilingStatus = "single" | "marriedJointly" | "headOfHousehold";
 
+/**
+ * Pre-tax: a Section 125 cafeteria-plan-style deduction (health/dental/
+ * vision insurance premiums, HSA, FSA) -- excluded from federal taxable
+ * wages, state taxable wages, AND FICA wages (unlike a traditional
+ * 401(k), which is FICA-subject; see fica.ts).
+ *
+ * Post-tax: comes out of net pay only (Roth contributions, wage
+ * garnishments, union dues, etc.) -- no effect on any taxable wage base.
+ */
+export type DeductionTaxTreatment = "preTax" | "postTax";
+
+export interface OtherDeductionInput {
+  id: string;
+  label: string;
+  /** Amount for this one pay period. */
+  amount: number;
+  taxTreatment: DeductionTaxTreatment;
+}
+
+export interface OtherDeductionResult {
+  id: string;
+  label: string;
+  /** Rounded to the cent -- this is what's shown on screen and what's summed into totalDeductions. */
+  amount: number;
+  taxTreatment: DeductionTaxTreatment;
+}
+
 export interface PaycheckInput {
   /** Gross pay for this pay period (typically the overtime calculator's total pay). */
   grossPay: number;
@@ -13,17 +40,23 @@ export interface PaycheckInput {
   contribution401kPercent: number;
   /** USPS state code -- selects which state income tax rules apply (see lib/paycheck/stateTax). */
   state: string;
+  /** User-entered deductions beyond 401(k) -- health/dental/vision insurance, HSA, FSA, Roth contributions, garnishments, etc. */
+  otherDeductions: OtherDeductionInput[];
 }
 
 export interface PaycheckResult {
   grossPay: number;
   contribution401k: number;
-  /** Gross pay minus the 401(k) contribution -- what federal AND state income tax withholding is calculated on. */
+  /** Gross pay minus the 401(k) contribution and any pre-tax "other" deductions -- what federal AND state income tax withholding is calculated on. */
   federalTaxableWages: number;
   socialSecurityTax: number;
   medicareTax: number;
   federalIncomeTax: number;
   stateIncomeTax: number;
+  /** Rounded, in the order entered -- the canonical amounts summed into totalDeductions (zero/blank rows are dropped). */
+  otherDeductions: OtherDeductionResult[];
+  otherPreTaxTotal: number;
+  otherPostTaxTotal: number;
   totalDeductions: number;
   netPay: number;
 }

@@ -8,6 +8,10 @@
  * Both apply to gross wages BEFORE any traditional 401(k) reduction --
  * pre-tax retirement contributions reduce federal (and typically
  * state) income tax withholding, but are still fully subject to FICA.
+ * Section 125 cafeteria-plan deductions (health/dental/vision
+ * insurance, HSA, FSA) are the opposite: excluded from FICA wages too,
+ * not just federal/state -- see how calculate.ts computes `ficaWages`
+ * for a given call to this function.
  *
  * NOT modeled: the Social Security wage base cap requires knowing
  * year-to-date wages, which this calculator doesn't track (it
