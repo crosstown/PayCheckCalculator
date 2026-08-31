@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import VisitorCounter from "@/components/VisitorCounter";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Link href="/privacy" className="hover:underline">
             Privacy Policy
           </Link>
+          <VisitorCounter />
         </footer>
       </body>
     </html>
