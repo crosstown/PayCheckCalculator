@@ -18,18 +18,23 @@ export default function VisitorCounter() {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch(COUNTER_URL)
+    const controller = new AbortController();
+    fetch(COUNTER_URL, { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad response"))))
       .then((data: { count: number }) => {
-        if (!cancelled) setCount(data.count);
+        // Never let the displayed number decrease. The backend count is
+        // monotonically increasing by design, so any response showing a
+        // *lower* value than what's already on screen is stale/out of
+        // order (e.g. two nearly-simultaneous requests -- which happens
+        // in dev under StrictMode's double effect invocation -- whose
+        // responses arrive in a different order than they were sent) and
+        // should be ignored rather than visibly regressing the counter.
+        setCount((prev) => (prev === null ? data.count : Math.max(prev, data.count)));
       })
       .catch(() => {
-        // silently ignore -- see file header
+        // silently ignore -- see file header (covers AbortError too)
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, []);
 
   if (count === null) return null;
