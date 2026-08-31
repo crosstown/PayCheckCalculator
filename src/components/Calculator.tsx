@@ -323,6 +323,7 @@ export default function Calculator() {
                 <PaycheckDeductions
                   grossPay={result.totals.totalPay}
                   payPeriodsPerYear={PAY_PERIODS_PER_YEAR[payPeriod]}
+                  state={state}
                 />
               </div>
             )}

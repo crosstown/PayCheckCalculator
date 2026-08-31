@@ -1,6 +1,7 @@
 import type { PaycheckInput, PaycheckResult } from "./types";
 import { federalIncomeTaxWithholding } from "./federalWithholding2026";
 import { calculateFica } from "./fica";
+import { calculateStateTax } from "./stateTax/calculate";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -23,6 +24,16 @@ export function calculatePaycheck(input: PaycheckInput): PaycheckResult {
     Math.max(0, Math.floor(input.otherDependents)),
   );
 
+  // State tax uses the same post-401(k) taxable wages as federal
+  // (both are pre-tax reductions for state purposes too, in every
+  // state modeled here).
+  const stateIncomeTax = calculateStateTax(
+    input.state,
+    federalTaxableWages,
+    input.payPeriodsPerYear,
+    input.filingStatus,
+  );
+
   // Round every line item BEFORE summing, not after -- these are the
   // exact numbers shown on screen, and totalDeductions/netPay must
   // equal what a user gets by adding up those displayed lines
@@ -34,9 +45,14 @@ export function calculatePaycheck(input: PaycheckInput): PaycheckResult {
   const socialSecurityTaxRounded = round2(socialSecurityTax);
   const medicareTaxRounded = round2(medicareTax);
   const federalIncomeTaxRounded = round2(federalIncomeTax);
+  const stateIncomeTaxRounded = round2(stateIncomeTax);
 
   const totalDeductions = round2(
-    contribution401k + socialSecurityTaxRounded + medicareTaxRounded + federalIncomeTaxRounded,
+    contribution401k +
+      socialSecurityTaxRounded +
+      medicareTaxRounded +
+      federalIncomeTaxRounded +
+      stateIncomeTaxRounded,
   );
   const netPay = round2(grossPay - totalDeductions);
 
@@ -47,6 +63,7 @@ export function calculatePaycheck(input: PaycheckInput): PaycheckResult {
     socialSecurityTax: socialSecurityTaxRounded,
     medicareTax: medicareTaxRounded,
     federalIncomeTax: federalIncomeTaxRounded,
+    stateIncomeTax: stateIncomeTaxRounded,
     totalDeductions,
     netPay,
   };

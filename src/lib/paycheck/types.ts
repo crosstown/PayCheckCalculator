@@ -11,16 +11,19 @@ export interface PaycheckInput {
   otherDependents: number;
   /** Traditional (pre-tax) 401(k) contribution, as a percent of gross pay. Reduces federal taxable wages but NOT FICA wages -- 401(k) contributions are still subject to Social Security and Medicare tax. */
   contribution401kPercent: number;
+  /** USPS state code -- selects which state income tax rules apply (see lib/paycheck/stateTax). */
+  state: string;
 }
 
 export interface PaycheckResult {
   grossPay: number;
   contribution401k: number;
-  /** Gross pay minus the 401(k) contribution -- what federal income tax withholding is calculated on. */
+  /** Gross pay minus the 401(k) contribution -- what federal AND state income tax withholding is calculated on. */
   federalTaxableWages: number;
   socialSecurityTax: number;
   medicareTax: number;
   federalIncomeTax: number;
+  stateIncomeTax: number;
   totalDeductions: number;
   netPay: number;
 }

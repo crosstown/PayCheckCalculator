@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { calculatePaycheck } from "@/lib/paycheck/calculate";
 import { SOCIAL_SECURITY_WAGE_BASE_2026 } from "@/lib/paycheck/fica";
+import { getStateTaxRules } from "@/lib/paycheck/stateTax/calculate";
 import type { FilingStatus } from "@/lib/paycheck/types";
 
 const currency = new Intl.NumberFormat("en-US", {
@@ -22,17 +23,22 @@ const FILING_STATUS_LABELS: Record<FilingStatus, string> = {
 interface PaycheckDeductionsProps {
   grossPay: number;
   payPeriodsPerYear: number;
+  /** Reuses the state already selected for overtime purposes -- it's the same paycheck. */
+  state: string;
 }
 
 export default function PaycheckDeductions({
   grossPay,
   payPeriodsPerYear,
+  state,
 }: PaycheckDeductionsProps) {
   const [show, setShow] = useState(false);
   const [filingStatus, setFilingStatus] = useState<FilingStatus>("single");
   const [qualifyingChildren, setQualifyingChildren] = useState("0");
   const [otherDependents, setOtherDependents] = useState("0");
   const [contribution401kPercent, setContribution401kPercent] = useState("0");
+
+  const stateRules = getStateTaxRules(state);
 
   const result = useMemo(() => {
     const qc = parseInt(qualifyingChildren, 10);
@@ -45,6 +51,7 @@ export default function PaycheckDeductions({
       qualifyingChildren: Number.isNaN(qc) || qc < 0 ? 0 : qc,
       otherDependents: Number.isNaN(od) || od < 0 ? 0 : od,
       contribution401kPercent: Number.isNaN(pct) || pct < 0 ? 0 : pct,
+      state,
     });
   }, [
     grossPay,
@@ -53,6 +60,7 @@ export default function PaycheckDeductions({
     qualifyingChildren,
     otherDependents,
     contribution401kPercent,
+    state,
   ]);
 
   return (
@@ -159,6 +167,12 @@ export default function PaycheckDeductions({
             <span className="text-right">{deduction(result.medicareTax)}</span>
             <span>Federal income tax (est.)</span>
             <span className="text-right">{deduction(result.federalIncomeTax)}</span>
+            <span>
+              {stateRules?.hasIncomeTax
+                ? `${stateRules.stateName} state income tax (est.)`
+                : `${stateRules?.stateName ?? "State"} income tax`}
+            </span>
+            <span className="text-right">{deduction(result.stateIncomeTax)}</span>
           </div>
 
           <div className="flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold dark:border-neutral-800">
@@ -173,10 +187,34 @@ export default function PaycheckDeductions({
               and no additional Form W-4 elections beyond filing status and
               dependents (no extra income, deductions, or extra withholding).
             </li>
+            {stateRules?.hasIncomeTax ? (
+              <li>
+                {stateRules.stateName} state income tax is estimated using
+                that state&apos;s own 2026 brackets/rate ({stateRules.citation}
+                ), applied to the same post-401(k) taxable wages as federal.
+                No local/municipal income tax is included (a separate
+                undertaking from state tax), and no state-specific dependent
+                credits are applied.
+                {stateRules.notes?.map((n, i) => (
+                  <span key={i} className="mt-1 block">
+                    {n}
+                  </span>
+                ))}
+              </li>
+            ) : (
+              <li>
+                {stateRules?.stateName ?? "This state"} has no state income
+                tax on wages.
+                {stateRules?.notes?.map((n, i) => (
+                  <span key={i} className="mt-1 block">
+                    {n}
+                  </span>
+                ))}
+              </li>
+            )}
             <li>
-              Doesn&apos;t include state or local income tax, or other
-              paycheck deductions (health insurance, HSA/FSA, wage
-              garnishments, etc.).
+              Doesn&apos;t include other paycheck deductions (health
+              insurance, HSA/FSA, wage garnishments, etc.).
             </li>
             <li>
               Social Security tax doesn&apos;t account for the annual wage
