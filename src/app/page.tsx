@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import Calculator from "@/components/Calculator";
 import OvertimeExplainer from "@/components/OvertimeExplainer";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (

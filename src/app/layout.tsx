@@ -15,6 +15,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Lets each page's `alternates.canonical` be a relative path ("/",
+  // "/privacy") instead of hardcoding the full domain everywhere --
+  // and, more importantly, actually emits a canonical tag at all.
+  // 2026-09-04: added after Search Console flagged "Duplicate without
+  // user-selected canonical" -- www.paycheckovertime.com and the bare
+  // domain both serve identical content with no signal of which one
+  // is authoritative, so Google was seeing two copies of every page.
+  metadataBase: new URL("https://paycheckovertime.com"),
   title: "Paycheck Overtime Calculator",
   description:
     "Estimate overtime pay for all 50 states + DC. Free, no sign-up.",
