@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function OvertimeExplainer() {
   return (
     <section className="mx-auto w-full max-w-2xl px-4 pb-16 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
@@ -65,6 +67,12 @@ export default function OvertimeExplainer() {
         This calculator applies the correct rule set automatically based on
         the state you select, so you don&apos;t have to remember which state
         has which exception.
+      </p>
+
+      <p className="mt-3">
+        <Link href="/overtime" className="text-blue-600 underline dark:text-blue-400">
+          Browse full overtime rules for every state →
+        </Link>
       </p>
 
       <h2 className="mt-8 text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">

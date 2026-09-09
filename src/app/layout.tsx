@@ -53,6 +53,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <div className="flex-1">{children}</div>
         <footer className="border-t border-neutral-200 py-6 text-center text-xs text-neutral-500 dark:border-neutral-800">
+          <Link href="/overtime" className="hover:underline">
+            Overtime Laws by State
+          </Link>
+          <span className="mx-2">·</span>
           <Link href="/privacy" className="hover:underline">
             Privacy Policy
           </Link>
