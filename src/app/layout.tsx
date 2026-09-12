@@ -14,6 +14,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Reused by openGraph/twitter below so title/description only need to be
+// true in one place -- kept honest to what the calculator actually does
+// today (regular/overtime/gross/take-home pay, state-specific rules), not
+// features it doesn't have yet (e.g. shift differential isn't a real
+// input as of this writing -- don't advertise it until it is).
+const SITE_TITLE = "Paycheck Overtime Calculator — Weekly, Biweekly & State Overtime Pay";
+const SITE_DESCRIPTION =
+  "Estimate regular pay, overtime pay, and take-home pay for hourly workers, with state-specific overtime rules for all 50 states + DC. Free, no sign-up.";
+
 export const metadata: Metadata = {
   // Lets each page's `alternates.canonical` be a relative path ("/",
   // "/privacy") instead of hardcoding the full domain everywhere --
@@ -23,9 +32,37 @@ export const metadata: Metadata = {
   // domain both serve identical content with no signal of which one
   // is authoritative, so Google was seeing two copies of every page.
   metadataBase: new URL("https://paycheckovertime.com"),
-  title: "Paycheck Overtime Calculator",
-  description:
-    "Estimate overtime pay for all 50 states + DC. Free, no sign-up.",
+  title: { default: SITE_TITLE, template: "%s — Paycheck Overtime Calculator" },
+  description: SITE_DESCRIPTION,
+  robots: { index: true, follow: true },
+  // No og:image yet -- a real one (a simple branded card, not a
+  // screenshot) is worth adding later, but a missing image just means
+  // link previews render without a thumbnail, not broken; not worth
+  // blocking this pass on producing one.
+  openGraph: {
+    type: "website",
+    url: "https://paycheckovertime.com",
+    siteName: "Paycheck Overtime Calculator",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+};
+
+const WEB_APPLICATION_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Paycheck Overtime Calculator",
+  applicationCategory: "FinanceApplication",
+  operatingSystem: "Any",
+  url: "https://paycheckovertime.com/",
+  description: SITE_DESCRIPTION,
+  isAccessibleForFree: true,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -48,6 +85,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5479758505355786"
           crossOrigin="anonymous"
+        />
+        {/* WebApplication structured data -- eligible rich-result types for a
+            free web tool are thin (no special SERP treatment expected), but
+            this still helps Google's entity understanding of what the site
+            is, at zero cost/risk. dangerouslySetInnerHTML avoids Next
+            double-escaping the JSON; JSON.stringify on our own static
+            object, not user input, so no injection concern. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(WEB_APPLICATION_JSON_LD) }}
         />
       </head>
       <body className="min-h-full flex flex-col">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { CalculationResult, StateOvertimeRules } from "@/lib/overtime/types";
 import { calculateOvertime, effectiveDailyThreshold } from "@/lib/overtime/calculate";
 import { getStateRules, listStates } from "@/lib/overtime/registry";
 import type { StateCode } from "@/lib/overtime/types";
@@ -37,6 +38,40 @@ const PAY_PERIODS_PER_YEAR: Record<PayPeriod, number> = {
   semimonthly: 24,
 };
 
+/** Plain-English summary of the result, built from the real computed
+ * totals (not a template per pay-period type) so it stays correct for
+ * both a single week and multi-week (biweekly/semi-monthly) results
+ * without needing separate copy for each. Used for both the on-page
+ * explanation and the "Copy result" button, so the two can never drift
+ * out of sync with each other. */
+function buildResultSummary(
+  result: CalculationResult,
+  rules: StateOvertimeRules,
+  rate: number,
+  activeWeeks: number,
+  periodLabel: string,
+): string {
+  const { totals } = result;
+  const parts: string[] = [
+    `${totals.regularHours} regular hour${totals.regularHours === 1 ? "" : "s"} (${currency.format(totals.regularPay)})`,
+  ];
+  if (totals.overtimeHours > 0) {
+    parts.push(
+      `${totals.overtimeHours} overtime hour${totals.overtimeHours === 1 ? "" : "s"} at ${rules.weeklyOvertimeMultiplier}x (${currency.format(totals.overtimePay)})`,
+    );
+  }
+  if (totals.doubleTimeHours > 0) {
+    parts.push(
+      `${totals.doubleTimeHours} double-time hour${totals.doubleTimeHours === 1 ? "" : "s"} at ${rules.dailyDoubleTimeMultiplier ?? 2}x (${currency.format(totals.doubleTimePay)})`,
+    );
+  }
+  const weekPhrase = activeWeeks > 1 ? `across ${activeWeeks} weeks (${periodLabel})` : `in one week`;
+  return (
+    `At ${currency.format(rate)}/hour in ${rules.stateName}, working ${weekPhrase}: ` +
+    `${parts.join(", ")}. Estimated gross pay: ${currency.format(totals.totalPay)}.`
+  );
+}
+
 export default function Calculator() {
   const states = useMemo(() => listStates(), []);
   const [state, setState] = useState<StateCode>("CT");
@@ -51,6 +86,7 @@ export default function Calculator() {
   const [weekTotals, setWeekTotals] = useState(DEFAULT_WEEK_TOTALS);
   const [weekDays, setWeekDays] = useState(DEFAULT_WEEK_DAYS);
   const [altSchedule, setAltSchedule] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const rules = getStateRules(state);
   const activeWeeks = FIXED_WEEKS[payPeriod] ?? semiMonthlyWeeks;
@@ -283,6 +319,9 @@ export default function Calculator() {
             {/* Results */}
             {result && !error && (
               <div className="space-y-4 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+                <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                  {buildResultSummary(result, rules, rate, activeWeeks, PAY_PERIOD_LABELS[payPeriod])}
+                </p>
                 {result.weeks.map((w, i) => (
                   <div key={i} className="text-sm">
                     {result.weeks.length > 1 && (
@@ -320,6 +359,36 @@ export default function Calculator() {
                   <span>{currency.format(result.totals.totalPay)}</span>
                 </div>
 
+                <div className="flex gap-3 print:hidden">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(
+                          buildResultSummary(result, rules, rate, activeWeeks, PAY_PERIOD_LABELS[payPeriod]),
+                        );
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch {
+                        // Clipboard API can be unavailable (older browser,
+                        // permission denied) -- fail silently rather than
+                        // show an error for a non-essential convenience
+                        // button.
+                      }
+                    }}
+                    className="rounded-md border border-neutral-300 px-3 py-1.5 text-xs font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+                  >
+                    {copied ? "Copied!" : "Copy result"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="rounded-md border border-neutral-300 px-3 py-1.5 text-xs font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+                  >
+                    Print result
+                  </button>
+                </div>
+
                 <PaycheckDeductions
                   grossPay={result.totals.totalPay}
                   payPeriodsPerYear={PAY_PERIODS_PER_YEAR[payPeriod]}
@@ -339,6 +408,15 @@ export default function Calculator() {
                 ))}
               </ul>
             </div>
+
+            <p className="text-xs text-neutral-400 print:hidden">
+              Privacy: the numbers above are calculated in your browser and
+              are never sent to or stored on our servers. See the{" "}
+              <a href="/privacy" className="underline hover:text-neutral-600 dark:hover:text-neutral-300">
+                privacy policy
+              </a>{" "}
+              for details.
+            </p>
           </>
         )}
       </div>
