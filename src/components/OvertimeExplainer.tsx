@@ -101,6 +101,11 @@ export default function OvertimeExplainer() {
           Browse full overtime rules for every state →
         </Link>
       </p>
+      <p className="mt-2">
+        <Link href="/biweekly-overtime-calculator" className="text-blue-600 underline dark:text-blue-400">
+          Biweekly overtime calculator: why 80 total hours isn&apos;t the whole story →
+        </Link>
+      </p>
 
       <h2 className="mt-8 text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
         Frequently asked questions

@@ -144,7 +144,11 @@ export default function Calculator() {
         Paycheck Overtime Calculator
       </h1>
       <p className="mt-2 text-sm text-neutral-500">
-        Estimate overtime pay for all 50 states + DC.
+        Estimate regular pay, overtime pay, and gross paycheck totals for
+        hourly workers. Select your state to apply state-specific overtime
+        rules, then use the schedule comparison tool below — with shift
+        differential — to see which weekly or biweekly schedule actually
+        pays more.
       </p>
 
       <div className="mt-8 space-y-6 rounded-xl border border-neutral-200 p-6 dark:border-neutral-800">

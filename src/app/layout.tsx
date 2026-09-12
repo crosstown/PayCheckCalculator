@@ -32,7 +32,13 @@ export const metadata: Metadata = {
   // domain both serve identical content with no signal of which one
   // is authoritative, so Google was seeing two copies of every page.
   metadataBase: new URL("https://paycheckovertime.com"),
-  title: { default: SITE_TITLE, template: "%s — Paycheck Overtime Calculator" },
+  // Plain string, not a {default, template} object -- a template would
+  // append "— Paycheck Overtime Calculator" to every child page's own
+  // title (state pages, the biweekly page), pushing already-tight titles
+  // like "California Overtime Pay Laws & Calculator (2026)" past 60
+  // characters and into SERP truncation for no benefit -- each page's own
+  // title is already complete and specific.
+  title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   robots: { index: true, follow: true },
   // No og:image yet -- a real one (a simple branded card, not a
@@ -72,6 +78,29 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        {/* WebApplication structured data -- eligible rich-result types for a
+            free web tool are thin (no special SERP treatment expected), but
+            this still helps Google's entity understanding of what the site
+            is, at zero cost/risk. dangerouslySetInnerHTML avoids Next
+            double-escaping the JSON; JSON.stringify on our own static
+            object, not user input, so no injection concern.
+
+            Known dev-console noise, investigated and confirmed harmless:
+            AdSense's own script inserts an additional <script> node at the
+            very front of <head> at runtime (its own fetchpriority="high"
+            behavior), which collides with whatever React finds in that
+            position during hydration and logs a "won't be patched up"
+            mismatch warning regardless of where this tag sits in the JSX
+            (moving it didn't change anything -- tried it). Verified directly
+            via document.querySelectorAll after hydration settles: the
+            correct JSON-LD ends up in the live DOM every time, and the
+            static-exported HTML Googlebot/curl actually fetches already has
+            it right from prerendering, untouched by any of this -- so this
+            is React-vs-AdSense console noise, not a real content bug. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(WEB_APPLICATION_JSON_LD) }}
+        />
         {/* AdSense verification: Google's instructions say to place this
             literal <script> tag between <head></head> on every page, and
             their review crawler checks for exactly that. next/script's
@@ -85,16 +114,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5479758505355786"
           crossOrigin="anonymous"
-        />
-        {/* WebApplication structured data -- eligible rich-result types for a
-            free web tool are thin (no special SERP treatment expected), but
-            this still helps Google's entity understanding of what the site
-            is, at zero cost/risk. dangerouslySetInnerHTML avoids Next
-            double-escaping the JSON; JSON.stringify on our own static
-            object, not user input, so no injection concern. */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(WEB_APPLICATION_JSON_LD) }}
         />
       </head>
       <body className="min-h-full flex flex-col">

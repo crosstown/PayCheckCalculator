@@ -13,11 +13,12 @@ export const dynamic = "force-static";
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://paycheckovertime.com";
-  const lastModified = new Date("2026-09-09");
+  const lastModified = new Date("2026-09-12");
 
   return [
     { url: `${base}/`, lastModified, changeFrequency: "monthly", priority: 1.0 },
     { url: `${base}/overtime`, lastModified, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/biweekly-overtime-calculator`, lastModified, changeFrequency: "monthly", priority: 0.8 },
     ...listStates().map((s) => ({
       url: `${base}/overtime/${s.code.toLowerCase()}`,
       lastModified,
