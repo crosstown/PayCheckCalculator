@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listStates } from "@/lib/overtime/registry";
 import { getStateRules } from "@/lib/overtime/registry";
+import { FLAGSHIP_STATES } from "@/lib/overtime/flagshipStates";
 
 export const metadata: Metadata = {
   title: "Overtime Pay Laws by State",
@@ -36,6 +37,27 @@ export default function OvertimeStatesIndex() {
         state below for its specific rules, a citation, and a worked
         example.
       </p>
+
+      <div className="mt-6 rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-800">
+        <p className="font-medium text-neutral-800 dark:text-neutral-200">
+          Most in-depth: minimum wage, tipped-wage, and exempt-salary rules
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {Object.keys(FLAGSHIP_STATES).map((code) => {
+            const s = states.find((st) => st.code === code);
+            if (!s) return null;
+            return (
+              <Link
+                key={code}
+                href={`/overtime/${code.toLowerCase()}`}
+                className="rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+              >
+                {s.name}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
       {specialRuleStates.length > 0 && (
         <div className="mt-6 rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-800">

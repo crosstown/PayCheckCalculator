@@ -231,7 +231,7 @@ export default function ScheduleComparison() {
   const outcomeB = useMemo(() => computeOutcome(b), [b]);
 
   return (
-    <section className="mx-auto w-full max-w-2xl px-4 pb-16">
+    <section id="compare-schedules" className="mx-auto w-full max-w-2xl px-4 pb-16 scroll-mt-6">
       <h2 className="text-xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
         Compare two work schedules
       </h2>
