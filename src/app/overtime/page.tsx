@@ -37,6 +37,14 @@ export default function OvertimeStatesIndex() {
         state below for its specific rules, a citation, and a worked
         example.
       </p>
+      <p className="mt-2 text-sm text-neutral-500">
+        Paid biweekly? See the{" "}
+        <Link href="/biweekly-overtime-calculator" className="text-blue-600 underline dark:text-blue-400">
+          biweekly overtime calculator
+        </Link>{" "}
+        — overtime is calculated per workweek, not by averaging your two-week
+        total, and that trips a lot of people up.
+      </p>
 
       <div className="mt-6 rounded-lg border border-neutral-200 p-4 text-sm dark:border-neutral-800">
         <p className="font-medium text-neutral-800 dark:text-neutral-200">
