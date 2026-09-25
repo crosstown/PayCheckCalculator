@@ -1,10 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const TITLE = "Privacy Policy — Paycheck Overtime Calculator";
+const DESCRIPTION = "How paycheckovertime.com handles your data and uses advertising cookies.";
+
 export const metadata: Metadata = {
-  title: "Privacy Policy — Paycheck Overtime Calculator",
-  description: "How paycheckovertime.com handles your data and uses advertising cookies.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/privacy" },
+  openGraph: {
+    type: "website",
+    siteName: "Paycheck Overtime Calculator",
+    url: "/privacy",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };
 
 export default function PrivacyPolicy() {

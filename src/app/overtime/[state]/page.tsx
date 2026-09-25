@@ -40,10 +40,24 @@ export async function generateMetadata(
   const flagshipNote = flagship
     ? ` Includes 2026 minimum wage, tipped-wage, and exempt-salary thresholds.`
     : "";
+  const title = `${rules.stateName} Overtime Pay Laws & Calculator (2026)`;
+  const description = `How overtime pay works in ${rules.stateName}: ${rules.weeklyOvertimeThresholdHours}-hour weekly rule at ${rules.weeklyOvertimeMultiplier}x pay (${rules.citation}).${daily}${flagshipNote} Free calculator included.`;
+  const canonical = `/overtime/${state.toLowerCase()}`;
   return {
-    title: `${rules.stateName} Overtime Pay Laws & Calculator (2026)`,
-    description: `How overtime pay works in ${rules.stateName}: ${rules.weeklyOvertimeThresholdHours}-hour weekly rule at ${rules.weeklyOvertimeMultiplier}x pay (${rules.citation}).${daily}${flagshipNote} Free calculator included.`,
-    alternates: { canonical: `/overtime/${state.toLowerCase()}` },
+    title,
+    description,
+    alternates: { canonical },
+    // Root layout's openGraph/twitter are fixed to the homepage's own
+    // url/title -- without this override, sharing any of the ~50 state
+    // pages would show a link preview pointing back to the homepage.
+    openGraph: {
+      type: "website",
+      siteName: "Paycheck Overtime Calculator",
+      url: canonical,
+      title,
+      description,
+    },
+    twitter: { card: "summary", title, description },
   };
 }
 

@@ -4,11 +4,25 @@ import { listStates } from "@/lib/overtime/registry";
 import { getStateRules } from "@/lib/overtime/registry";
 import { FLAGSHIP_STATES } from "@/lib/overtime/flagshipStates";
 
+const TITLE = "Overtime Pay Laws by State";
+const DESCRIPTION =
+  "Overtime pay rules for all 50 states + DC — weekly and daily thresholds, double-time rules, and citations, plus a free calculator for each state.";
+
 export const metadata: Metadata = {
-  title: "Overtime Pay Laws by State",
-  description:
-    "Overtime pay rules for all 50 states + DC — weekly and daily thresholds, double-time rules, and citations, plus a free calculator for each state.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/overtime" },
+  // Root layout's openGraph/twitter are fixed to the homepage's own
+  // url/title -- without an override here, every share of this page would
+  // show a link preview pointing back to the homepage instead of this one.
+  openGraph: {
+    type: "website",
+    siteName: "Paycheck Overtime Calculator",
+    url: "/overtime",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };
 
 export default function OvertimeStatesIndex() {

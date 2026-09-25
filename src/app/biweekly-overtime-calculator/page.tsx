@@ -2,11 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import BiweeklyCalculator from "@/components/BiweeklyCalculator";
 
+const TITLE = "Biweekly Overtime Calculator | Calculate Weekly Overtime in a 2-Week Pay Period";
+const DESCRIPTION =
+  "Estimate overtime in a biweekly paycheck. Enter hours for week 1 and week 2 to see why overtime is usually calculated by workweek, not by total 80-hour pay period.";
+
 export const metadata: Metadata = {
-  title: "Biweekly Overtime Calculator | Calculate Weekly Overtime in a 2-Week Pay Period",
-  description:
-    "Estimate overtime in a biweekly paycheck. Enter hours for week 1 and week 2 to see why overtime is usually calculated by workweek, not by total 80-hour pay period.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/biweekly-overtime-calculator" },
+  // Root layout's openGraph/twitter are fixed to the homepage's own
+  // url/title -- without an override here, sharing this page would show a
+  // link preview pointing back to the homepage instead of this one.
+  openGraph: {
+    type: "website",
+    siteName: "Paycheck Overtime Calculator",
+    url: "/biweekly-overtime-calculator",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };
 
 const BREADCRUMB_JSON_LD = {
