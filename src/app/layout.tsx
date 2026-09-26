@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import VisitorCounter from "@/components/VisitorCounter";
 import "./globals.css";
+
+const GA_MEASUREMENT_ID = "G-X2TH19CWM5";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -117,6 +120,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className="min-h-full flex flex-col">
+        {/* No literal-markup requirement like AdSense's tag above, so
+            next/script's optimized loading is fine here. */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
         <div className="flex-1">{children}</div>
         <footer className="border-t border-neutral-200 py-6 text-center text-xs text-neutral-500 dark:border-neutral-800">
           <Link href="/overtime" className="hover:underline">
