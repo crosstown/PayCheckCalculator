@@ -40,8 +40,13 @@ export async function generateMetadata(
   const flagshipNote = flagship
     ? ` Includes 2026 minimum wage, tipped-wage, and exempt-salary thresholds.`
     : "";
+  // "is overtime taxed in X" is a real, recurring Search Console query
+  // pattern (seen for OR/UT/KY among others) distinct from "overtime laws
+  // X" -- worth a dedicated clause in the snippet, not just buried in the
+  // page body, since every state page already has this data available.
+  const taxNote = stateIncomeTaxSummary(code) ? ` Also covers how overtime is taxed in ${rules.stateName}.` : "";
   const title = `${rules.stateName} Overtime Pay Laws & Calculator (2026)`;
-  const description = `How overtime pay works in ${rules.stateName}: ${rules.weeklyOvertimeThresholdHours}-hour weekly rule at ${rules.weeklyOvertimeMultiplier}x pay (${rules.citation}).${daily}${flagshipNote} Free calculator included.`;
+  const description = `How overtime pay works in ${rules.stateName}: ${rules.weeklyOvertimeThresholdHours}-hour weekly rule at ${rules.weeklyOvertimeMultiplier}x pay (${rules.citation}).${daily}${flagshipNote}${taxNote} Free calculator included.`;
   const canonical = `/overtime/${state.toLowerCase()}`;
   return {
     title,
@@ -116,17 +121,32 @@ export default async function StateOvertimePage(props: PageProps<"/overtime/[sta
   const flagship = getFlagshipContent(code);
   const biweeklyExample = flagship ? buildBiweeklyConfusionExample(code) : null;
   const shiftComparison = flagship ? build12HourShiftComparison(code) : null;
-  const faqJsonLd = flagship
+
+  // "Is overtime taxed in X" shows up as real Search Console query volume
+  // (OR/UT/KY, at minimum) separate from "overtime laws X" -- this FAQ
+  // entry answers that exact phrasing directly, and unlike the rest of
+  // this page's FAQ content it isn't gated behind `flagship`: every state
+  // with tax data (nearly all 51) gets it, since stateIncomeTaxSummary()
+  // already covers them all.
+  const taxFaq = taxSummary
     ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: flagship.faq.map(({ q, a }) => ({
-          "@type": "Question",
-          name: q,
-          acceptedAnswer: { "@type": "Answer", text: a },
-        })),
+        q: `Is overtime taxed differently in ${rules.stateName}?`,
+        a: `No -- overtime pay isn't taxed at a different rate than your regular wages. It's simply added to your gross pay for that period and withheld the same way as any other pay. ${taxSummary}`,
       }
     : null;
+  const faqItems = [...(flagship?.faq ?? []), ...(taxFaq ? [taxFaq] : [])];
+  const faqJsonLd =
+    faqItems.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: faqItems.map(({ q, a }) => ({
+            "@type": "Question",
+            name: q,
+            acceptedAnswer: { "@type": "Answer", text: a },
+          })),
+        }
+      : null;
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10">
@@ -334,16 +354,12 @@ export default async function StateOvertimePage(props: PageProps<"/overtime/[sta
           </>
         )}
 
-        {taxSummary && (
+        {taxFaq && (
           <section>
             <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
-              Taxes on overtime pay in {rules.stateName}
+              {taxFaq.q}
             </h2>
-            <p className="mt-2">
-              Overtime pay isn&apos;t taxed differently from regular
-              wages — it&apos;s just added to your gross pay for the
-              period and withheld at the same rates. {taxSummary}
-            </p>
+            <p className="mt-2">{taxFaq.a}</p>
           </section>
         )}
 
