@@ -140,6 +140,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Overtime Laws by State
           </Link>
           <span className="mx-2">·</span>
+          <Link href="/about" className="hover:underline">
+            About
+          </Link>
+          <span className="mx-2">·</span>
+          <Link href="/contact" className="hover:underline">
+            Contact
+          </Link>
+          <span className="mx-2">·</span>
           <Link href="/privacy" className="hover:underline">
             Privacy Policy
           </Link>

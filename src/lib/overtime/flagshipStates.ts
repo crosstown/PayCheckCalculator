@@ -2,7 +2,8 @@ import type { StateCode } from "./types";
 
 /**
  * Extended, independently-researched content for a small set of flagship
- * state pages (CT, NY, NJ, CA, MA) -- NOT applied to all 51 state pages.
+ * state pages (CT, NY, NJ, CA, MA, TX, FL, WA, IL) -- NOT applied to all
+ * 51 state pages.
  *
  * Deliberate scope decision (2026-09-12): a competitive/content-depth
  * review correctly pointed out that most of the 51 state pages are thin
@@ -19,6 +20,11 @@ import type { StateCode } from "./types";
  * 2026-09-12, not taken from a secondary aggregator/blog -- see each
  * entry's `sourceUrl`. These figures change (most on Jan 1 each year) --
  * re-verify before trusting this file long after that date.
+ *
+ * TX/FL/WA/IL added 2026-09-28 (same sourcing bar: every figure checked
+ * against an official .gov page/document, not an aggregator) -- chosen as
+ * the next 4 highest-population states not already covered, to reduce how
+ * much of the 51-page state section reads as templated/thin content.
  */
 
 export interface SourcedFact {
@@ -193,6 +199,134 @@ export const FLAGSHIP_STATES: Partial<Record<StateCode, FlagshipStateContent>> =
       {
         q: "How does the tipped minimum wage work in Massachusetts?",
         a: "Employers can pay a $6.75/hour base rate if tips bring the total to at least $15.00/hour for every individual shift -- it's checked shift by shift, so a slow shift's shortfall must be made up by the employer even if a busier shift the same week made up for it on average.",
+      },
+    ],
+  },
+  TX: {
+    minimumWage: {
+      summary: "$7.25/hour -- Texas has never set its own minimum wage above the federal floor, and this rate has been unchanged since it took effect nationally on July 24, 2009.",
+      sourceLabel: "Texas Workforce Commission, Texas Minimum Wage Law",
+      sourceUrl: "https://www.twc.texas.gov/programs/wage-and-hour/texas-minimum-wage-law",
+    },
+    tippedWage: {
+      summary: "Texas has no separate state tipped-wage rate, so the federal tip credit applies: employers may pay as little as $2.13/hour in direct cash wages, as long as tips bring total pay up to at least $7.25/hour for every hour worked. If they don't, the employer owes the difference.",
+      sourceLabel: "U.S. Department of Labor, Minimum Wages for Tipped Employees",
+      sourceUrl: "https://www.dol.gov/agencies/whd/state/minimum-wage/tipped",
+    },
+    exemptSalaryThreshold: {
+      summary: "Texas hasn't set its own higher exempt-salary threshold -- the federal minimum of $684/week ($35,568/year) applies for the executive, administrative, and professional exemptions.",
+      sourceLabel: "Texas Workforce Commission, Salary Test for Exempt Employees",
+      sourceUrl: "https://efte.twc.texas.gov/salary_test_for_exempt_employees.html",
+    },
+    commonMistake: "Because Texas has no state minimum wage, no state overtime law, and no daily-overtime rule of its own, employers sometimes assume Texas has looser overtime requirements generally -- it doesn't. The federal FLSA's 40-hour weekly standard applies in full; Texas simply hasn't layered anything extra on top of it, in either direction.",
+    faq: [
+      {
+        q: "Does Texas have its own overtime law?",
+        a: "No. Texas has no state overtime statute for private employers -- the federal FLSA applies directly: 1.5x your regular rate after 40 hours in a workweek, with no daily-overtime rule.",
+      },
+      {
+        q: "Why is the Texas minimum wage still $7.25?",
+        a: "Texas ties its minimum wage to the federal rate rather than setting its own, and Congress hasn't raised the federal minimum wage since 2009. Some Texas cities and employers pay more voluntarily, but there's no state-law floor above $7.25/hour.",
+      },
+      {
+        q: "Can a Texas employer pay tipped workers less than $7.25/hour?",
+        a: "Yes, down to $2.13/hour in direct cash wages under the federal tip credit, as long as tips bring total pay to at least $7.25/hour for every hour worked. If a slow shift's tips don't cover the gap, the employer must make up the difference.",
+      },
+    ],
+  },
+  FL: {
+    minimumWage: {
+      summary: "$14.00/hour through September 29, 2026, then $15.00/hour starting September 30, 2026 -- the final step of a constitutional amendment Florida voters approved in November 2020, phasing the state to $15.00/hour on that exact date.",
+      sourceLabel: "Florida Department of Commerce, Florida Minimum Wage",
+      sourceUrl: "https://floridajobs.org/florida-minimum-wage",
+    },
+    tippedWage: {
+      summary: "$10.98/hour cash wage through September 29, 2026, rising to $11.98/hour on September 30, 2026 alongside the standard minimum wage -- tips must bring total pay up to the full minimum wage for every hour, with the employer covering any shortfall.",
+      sourceLabel: "Florida Department of Commerce, Florida Minimum Wage",
+      sourceUrl: "https://floridajobs.org/florida-minimum-wage",
+    },
+    exemptSalaryThreshold: {
+      summary: "Florida hasn't set its own exempt-salary threshold -- the federal minimum of $684/week ($35,568/year) applies for the executive, administrative, and professional exemptions.",
+      sourceLabel: "Florida Department of Commerce",
+      sourceUrl: "https://floridajobs.org/florida-minimum-wage",
+    },
+    commonMistake: "Florida's minimum wage changes every September 30, not January 1 like most states -- payroll systems built around a January update cycle can miss it. The jump to $15.00/hour on September 30, 2026 is the last scheduled increase from the 2020 amendment; after that, increases switch to annual inflation adjustments announced each October 15 for the following January.",
+    faq: [
+      {
+        q: "When does Florida's minimum wage go up?",
+        a: "September 30, not January 1. It rises to $15.00/hour on September 30, 2026, completing the phase-in voters approved in 2020. After that, Florida switches to annual inflation-based adjustments announced by October 15 each year.",
+      },
+      {
+        q: "Does Florida have daily overtime or a 7th-consecutive-day rule?",
+        a: "No. Florida follows the federal FLSA standard: overtime after 40 hours in a single workweek, with no separate daily-overtime or extra-day premium.",
+      },
+      {
+        q: "How much can a Florida employer pay tipped workers?",
+        a: "As little as $10.98/hour in cash wages through September 29, 2026 (rising to $11.98/hour on September 30), as long as tips bring the total to at least the full minimum wage for every hour. Shortfalls must be made up by the employer.",
+      },
+    ],
+  },
+  WA: {
+    minimumWage: {
+      summary: "$17.13/hour statewide, effective January 1, 2026 -- a 2.8% increase tied to the CPI. Several cities set higher local minimums, including Seattle ($21.30/hour) and Burien/Renton/Everett/King County's unincorporated areas (roughly $20.77-$21.63/hour for large employers).",
+      sourceLabel: "Washington State Dept. of Labor & Industries, Minimum Wage",
+      sourceUrl: "https://www.lni.wa.gov/workers-rights/wages/minimum-wage/",
+    },
+    tippedWage: {
+      summary: "Washington does not allow a tip credit at all -- employers may not count tips or service charges toward the minimum wage. Tipped employees get the full state or local minimum wage in direct wages, plus tips on top, no reduced cash rate.",
+      sourceLabel: "Washington State Dept. of Labor & Industries, Minimum Wage",
+      sourceUrl: "https://www.lni.wa.gov/workers-rights/wages/minimum-wage/",
+    },
+    exemptSalaryThreshold: {
+      summary: "$1,541.70/week ($80,168.40/year) for the executive, administrative, and professional exemptions, effective January 1, 2026 -- set at 2.25x the state minimum wage, and scheduled to keep rising each year until it reaches 2.5x minimum wage in 2028. Computer professionals have their own separate threshold, 3.5x minimum wage ($59.96/hour).",
+      sourceLabel: "Washington State Dept. of Labor & Industries, Salary Threshold Implementation Schedule",
+      sourceUrl: "https://www.lni.wa.gov/forms-publications/f700-207-000.pdf",
+    },
+    commonMistake: "The most common Washington mistake is assuming tipped employees can be paid less than minimum wage, the way federal law and most other states allow -- Washington explicitly bans tip credits, so every hour must be paid at the full state or local minimum wage in direct wages, with tips entirely on top.",
+    faq: [
+      {
+        q: "Can a Washington employer pay tipped workers less than minimum wage?",
+        a: "No. Washington is one of a small number of states that bans tip credits entirely -- tipped employees must receive the full applicable minimum wage (state or local, whichever is higher) in direct wages, with tips as a genuine bonus on top, not counted toward the wage floor.",
+      },
+      {
+        q: "Does Seattle's higher minimum wage change my overtime rate?",
+        a: "Yes -- your overtime rate is 1.5x your actual regular rate, so if you're paid Seattle's $21.30/hour minimum, your overtime rate is at least $31.95/hour, not the $25.70/hour you'd get off the $17.13 statewide rate.",
+      },
+      {
+        q: "Why does Washington's exempt-salary threshold keep changing every year?",
+        a: "It's set as a multiple of the state minimum wage (2.25x in 2026, rising to 2.5x by 2028), rather than a fixed dollar figure -- so it moves automatically every time the minimum wage does, without a separate rulemaking.",
+      },
+    ],
+  },
+  IL: {
+    minimumWage: {
+      summary: "$15.00/hour statewide for workers 18 and older, unchanged since January 1, 2025 (the final step of a phased increase that started in 2020). Cook County sets its own higher rate, rising to $15.40/hour on July 1, 2026; Chicago's is higher still.",
+      sourceLabel: "Illinois Department of Labor, Minimum Wage Law",
+      sourceUrl: "https://labor.illinois.gov/laws-rules/fls/minimum-wage-law.html",
+    },
+    tippedWage: {
+      summary: "Employers may take a tip credit of up to 40% of the minimum wage, paying as little as $9.00/hour (60% of $15.00) in direct cash wages -- as long as tips bring total pay up to the full $15.00/hour for every hour worked.",
+      sourceLabel: "Illinois Department of Labor, Minimum Wage Law",
+      sourceUrl: "https://labor.illinois.gov/laws-rules/fls/minimum-wage-law.html",
+    },
+    exemptSalaryThreshold: {
+      summary: "Illinois hasn't set its own higher exempt-salary threshold -- the federal minimum of $684/week ($35,568/year) applies for the executive, administrative, and professional exemptions.",
+      sourceLabel: "Illinois Department of Labor, Minimum Wage Law",
+      sourceUrl: "https://labor.illinois.gov/laws-rules/fls/minimum-wage-law.html",
+    },
+    commonMistake: "Workers and employers in the Chicago area often apply the statewide $15.00/hour rate when a higher local rate actually applies -- Cook County (rising to $15.40/hour on July 1, 2026) and Chicago itself both set their own minimum wages above the state floor, and the higher local rate controls for work performed there.",
+    faq: [
+      {
+        q: "Is Chicago's minimum wage different from the rest of Illinois?",
+        a: "Yes. Chicago and Cook County both set minimum wages above the $15.00/hour state rate -- Cook County rises to $15.40/hour on July 1, 2026. Which rate applies depends on where the work is actually performed.",
+      },
+      {
+        q: "Does Illinois have daily overtime?",
+        a: "No. Illinois follows the federal FLSA standard: overtime after 40 hours in a single workweek, at 1.5x your regular rate, with no separate daily-overtime rule.",
+      },
+      {
+        q: "How much of a tip credit can an Illinois employer take?",
+        a: "Up to 40% of the minimum wage, meaning a cash wage as low as $9.00/hour at the current $15.00/hour minimum -- as long as tips make up the rest. If tips fall short in a given pay period, the employer must cover the gap.",
       },
     ],
   },
